@@ -1,0 +1,34 @@
+{
+    "questions":{
+        "name":{
+            "label":"Имя / Псевдоним",
+            "placeholder":"Как к Вам обращаться?",
+            "required":1,
+            "max_length":100
+        },
+        "age":{
+            "label":"Возраст",
+            "placeholder":"Можете также указать свой ДР.",
+            "required":1,
+            "max_length":50
+        },
+        "creative_fields":{
+            "label":"Вид деятельности",
+            "placeholder":"Можно указать несколько направлений.",
+            "required":1,
+            "max_length":200
+        },
+        "about":{
+            "label":"О себе",
+            "placeholder":"Напишите не менее 100 символов. И без самохейта и спама!",
+            "style":"paragraph",
+            "required":1,
+            "max_length":100
+        },
+        "socials":{
+            "label":"Ссылки на соцсети",
+            "placeholder":"Можно оставить пустым...",
+            "required":0
+        }
+    }
+}

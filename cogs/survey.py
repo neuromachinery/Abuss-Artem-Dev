@@ -2,53 +2,33 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import re
+import json
+from os import access,F_OK
+from os import path as Path
 
 from db import save_survey, get_survey_by_user  # Предполагается, что реализованы
-
-SURVEY_CHANNEL_ID = 1384511819237822545
-REACTION_EMOJI = "❤️"
+CWD = Path.realpath(Path.dirname(__name__))
+def JSONLoad(filename,cwd=CWD):	
+    path = "{}\{}".format(cwd,filename)
+    try:
+        access(path, F_OK)
+        with open(path, "r") as f:
+            data = json.load(f)
+        return data
+    except:
+        print("did not found '{}' file.".format(filename))
+        return 0
+CONFIG = JSONLoad("config.json")
+SURVEY_CHANNEL_ID,REACTION_EMOJI = CONFIG["SURVEY_CHANNEL_ID"],CONFIG["REACTION_EMOJI"]
 
 class SurveyModal(discord.ui.Modal, title="📔 Отправка анкеты"):
-    name = discord.ui.TextInput(
-        label="Имя / Псевдоним",
-        placeholder="Как к Вам обращаться?",
-        required=True,
-        max_length=100
-    )
-
-    age = discord.ui.TextInput(
-        label="Возраст",
-        placeholder="Можете также указать свой ДР.",
-        required=True,
-        max_length=50
-    )
-
-    creative_fields = discord.ui.TextInput(
-        label="Вид деятельности",
-        placeholder="Можно указать несколько направлений.",
-        required=True,
-        max_length=200
-    )
-
-    about = discord.ui.TextInput(
-        label="О себе",
-        placeholder="Напишите не менее 100 символов. И без самохейта и спама!",
-        style=discord.TextStyle.paragraph,
-        required=True,
-        min_length=100
-    )
-
-    socials = discord.ui.TextInput(
-        label="Ссылки на соцсети",
-        placeholder="Можно оставить пустым...",
-        required=False
-    )
-
+    data = JSONLoad("survey_questions.json")
+    textInputs = {name:discord.ui.TextInput(**question) for name,question in data["questions"]}
+    questionValues = {name:Input.value for name,Input in textInputs.items()} #MAY BREAK IF SOCIALS IS EMPTY
     async def on_submit(self, interaction: discord.Interaction):
-        age_value = self.age.value.strip()
 
         # Проверяем, что в age_value нет букв (латиницы и кириллицы)
-        if re.search(r"[A-Za-zА-Яа-яЁё]", age_value):
+        if re.search(r"[A-Za-zА-Яа-яЁё]", self.questionValues["age"].strip()):
             await interaction.response.send_message(
                 "⚠️ В поле возраст нельзя вводить буквы. Пожалуйста, используйте цифры и символы.",
                 ephemeral=True
@@ -56,14 +36,7 @@ class SurveyModal(discord.ui.Modal, title="📔 Отправка анкеты"):
             return
 
         # Сохраняем анкету в базу данных
-        save_survey(
-            user_id=interaction.user.id,
-            name=self.name.value,
-            age=self.age.value,
-            creative_fields=self.creative_fields.value,
-            about=self.about.value,
-            socials=self.socials.value if self.socials.value else None
-        )
+        save_survey(user_id=interaction.user.id, **self.questionValues)
 
         # Публикуем анкету в нужный канал
         channel = interaction.client.get_channel(SURVEY_CHANNEL_ID)
@@ -72,11 +45,8 @@ class SurveyModal(discord.ui.Modal, title="📔 Отправка анкеты"):
             return
 
         embed = discord.Embed(title="📝 Новая анкета", color=discord.Color.purple())
-        embed.add_field(name="Имя / Псевдоним", value=self.name.value, inline=False)
-        embed.add_field(name="Возраст", value=self.age.value, inline=False)
-        embed.add_field(name="Вид деятельности", value=self.creative_fields.value, inline=False)
-        embed.add_field(name="О себе", value=self.about.value, inline=False)
-        embed.add_field(name="Соцсети", value=self.socials.value if self.socials.value else "—", inline=False)
+        for name,question in self.data["questions"]:
+            embed.add_field(name=question["label"], value=self.questionValues[name] if self.questionValues[name] else "—", inline=False)
         embed.set_footer(text=f"Отправлено пользователем: {interaction.user.display_name}")
 
         msg = await channel.send(embed=embed)
@@ -121,11 +91,8 @@ class SurveyCog(commands.Cog):
                 title=f"📝 Анкета пользователя {user.display_name}",
                 color=discord.Color.green()
             )
-            embed.add_field(name="Имя / Псевдоним", value=data["name"], inline=False)
-            embed.add_field(name="Возраст", value=data["age"], inline=False)
-            embed.add_field(name="Вид деятельности", value=data["creative_fields"], inline=False)
-            embed.add_field(name="О себе", value=data["about"], inline=False)
-            embed.add_field(name="Соцсети", value=data["socials"] if data["socials"] else "—", inline=False)
+            for name,question in self.data["questions"]:
+                embed.add_field(name=question["label"], value=self.questionValues[name] if self.questionValues[name] else "—", inline=False)
             embed.set_footer(text=f"Пользователь: {user.display_name}")
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
