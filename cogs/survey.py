@@ -61,25 +61,25 @@ class SurveyCog(commands.Cog):
 
     @app_commands.command(name="анкета", description="Редактировать или посмотреть анкету")
     @app_commands.describe(
-        действие="Что сделать: редактировать или посмотреть",
-        участник="Пользователь, чью анкету нужно посмотреть"
+        Action="Что сделать: редактировать или посмотреть",
+        user="Пользователь, чью анкету нужно посмотреть"
     )
     @app_commands.choices(
-        действие=[
+        Action=[
             app_commands.Choice(name="редактировать", value="редактировать"),
             app_commands.Choice(name="посмотреть", value="посмотреть")
         ]
     )
-    async def анкета(
+    async def form(
         self,
         interaction: discord.Interaction,
-        действие: app_commands.Choice[str],
-        участник: discord.User = None
+        Action: app_commands.Choice[str],
+        user: discord.User = None
     ):
-        if действие.value == "редактировать":
+        if Action.value == "редактировать":
             await interaction.response.send_modal(SurveyModal())
-        elif действие.value == "посмотреть":
-            user = участник or interaction.user
+        elif Action.value == "посмотреть":
+            user = user or interaction.user
 
             # Получаем анкету из БД
             data = get_survey_by_user(user.id)
