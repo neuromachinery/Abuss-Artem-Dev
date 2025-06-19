@@ -109,7 +109,7 @@ class SurveyCog(commands.Cog):
         if Action.value == "редактировать":
             await interaction.response.send_modal(SurveyModal())
         elif Action.value == "посмотреть":
-            user = участник or interaction.user
+            user = user or interaction.user
 
             # Получаем анкету из БД
             data = get_survey_by_user(user.id)
