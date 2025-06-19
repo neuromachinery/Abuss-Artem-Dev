@@ -16,14 +16,14 @@ class TemplateCog(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="шаблон", description="Отправить шаблон анкеты с кнопкой")
-    @app_commands.describe(имя="Тип шаблона")
+    @app_commands.describe(name="Тип шаблона")
     @app_commands.choices(
-        имя=[
+        name=[
             app_commands.Choice(name="анкета", value="анкета"),
             # можно добавить другие виды, если появятся в будущем
         ]
     )
-    async def шаблон(self, interaction: discord.Interaction, имя: app_commands.Choice[str]):
+    async def sample(self, interaction: discord.Interaction, имя: app_commands.Choice[str]):
         embed = discord.Embed(
             title=f"📔 Шаблон {имя.value}",
             description=(
